@@ -48,6 +48,9 @@ export function IndexedGrid({
   const [letters, setLetters] = useState<Record<number, string>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLettersMapModalOpen, setIsLettersMapModalOpen] = useState(false);
+  const [isSelectedIndexesModalOpen, setIsSelectedIndexesModalOpen] =
+    useState(false);
+  const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -94,6 +97,7 @@ export function IndexedGrid({
       }
       return next;
     });
+    setSelectedIndexes((prev) => prev.filter((index) => index < total));
     inputRefs.current.length = total;
   }, [total, hydrated]);
 
@@ -147,6 +151,10 @@ export function IndexedGrid({
     [lettersByIndex, filledIndexes]
   );
 
+  const selectedIndexesSet = useMemo(() => {
+    return new Set(selectedIndexes);
+  }, [selectedIndexes]);
+
   const handleLetterChange = (index: number, raw: string) => {
     if (raw === "") {
       setLetters((prev) => {
@@ -159,6 +167,16 @@ export function IndexedGrid({
     const ch = raw.slice(-1);
     if (!LETTER_RE.test(ch)) return;
     setLetters((prev) => ({ ...prev, [index]: ch.toUpperCase() }));
+  };
+
+  const handleToggleSelectedIndex = (index: number) => {
+    setSelectedIndexes((prev) => {
+      if (prev.includes(index)) {
+        return prev.filter((value) => value !== index);
+      }
+
+      return [...prev, index].sort((a, b) => a - b);
+    });
   };
 
   const handleCellKeyDown = (
@@ -222,6 +240,13 @@ export function IndexedGrid({
         >
           Limpiar letras
         </button>
+        <button
+          type="button"
+          onClick={() => setSelectedIndexes([])}
+          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+        >
+          Limpiar seleccionados
+        </button>
       </div>
 
       <div
@@ -230,10 +255,14 @@ export function IndexedGrid({
           gridTemplateColumns: `repeat(${columns}, minmax(2rem, 1fr))`,
         }}
       >
-        {cells.map((index) => (
+        { cells.map((index) => (
           <div
             key={index}
-            className="relative flex min-h-[2.75rem] min-w-[2.75rem] flex-col bg-white dark:bg-neutral-950"
+            className={`relative flex min-h-[2.75rem] min-w-[2.75rem] flex-col ${
+              selectedIndexesSet.has(index)
+                ? "bg-amber-200 dark:bg-amber-700/60"
+                : "bg-white dark:bg-neutral-950"
+            }`}
           >
             <span
               className="pointer-events-none absolute left-1 top-0.5 text-[12px] leading-none tabular-nums text-neutral-400 dark:text-neutral-500"
@@ -254,11 +283,16 @@ export function IndexedGrid({
               aria-label={`Celda ${index}`}
               value={letters[index] ?? ""}
               onChange={(e) => handleLetterChange(index, e.target.value)}
+              onClick={() => handleToggleSelectedIndex(index)}
               onKeyDown={(e) => handleCellKeyDown(index, e)}
-              className="h-full min-h-[2.75rem] w-full border-0 bg-transparent pt-3 text-center text-lg font-semibold uppercase tracking-wide text-neutral-900 outline-none ring-inset ring-transparent focus:ring-2 focus:ring-neutral-400 dark:text-neutral-100 dark:focus:ring-neutral-500"
+              className={`h-full min-h-[2.75rem] w-full border-0 bg-transparent pt-3 text-center text-lg font-semibold uppercase tracking-wide text-neutral-900 outline-none ring-inset focus:ring-2 dark:text-neutral-100 ${
+                selectedIndexesSet.has(index)
+                  ? "ring-1 ring-amber-500 focus:ring-amber-500 dark:ring-amber-400 dark:focus:ring-amber-400"
+                  : "ring-transparent focus:ring-neutral-400 dark:focus:ring-neutral-500"
+              }`}
             />
           </div>
-        ))}
+        )) }
       </div>
 
       <div className="flex flex-col gap-2">
@@ -276,9 +310,16 @@ export function IndexedGrid({
         >
           Ver todos los indices con letras
         </button>
+        <button
+          type="button"
+          onClick={() => setIsSelectedIndexesModalOpen(true)}
+          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+        >
+          Ver indices seleccionados
+        </button>
       </div>
 
-      {isLettersMapModalOpen ? (
+      {  isLettersMapModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-lg border border-neutral-300 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
             <div className="mb-3 flex items-center justify-between">
@@ -298,9 +339,9 @@ export function IndexedGrid({
             </pre>
           </div>
         </div>
-      ) : null}
+      ) : null }
 
-      {isModalOpen ? (
+      { isModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-lg border border-neutral-300 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
             <div className="mb-3 flex items-center justify-between">
@@ -320,7 +361,29 @@ export function IndexedGrid({
             </pre>
           </div>
         </div>
-      ) : null}
+      ) : null }
+
+      { isSelectedIndexesModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-neutral-300 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                Indices seleccionados
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsSelectedIndexesModalOpen(false)}
+                className="rounded-md border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              >
+                Cerrar
+              </button>
+            </div>
+            <pre className="max-h-[min(70vh,32rem)] overflow-y-auto overflow-x-hidden rounded-md bg-neutral-100 p-3 text-sm text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 whitespace-pre-wrap break-all font-mono">
+              {JSON.stringify(selectedIndexes)}
+            </pre>
+          </div>
+        </div>
+      ) : null }
     </div>
   );
 }
