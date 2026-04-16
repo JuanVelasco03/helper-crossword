@@ -283,7 +283,7 @@ export function IndexedGrid({
               aria-label={`Celda ${index}`}
               value={letters[index] ?? ""}
               onChange={(e) => handleLetterChange(index, e.target.value)}
-              onClick={() => handleToggleSelectedIndex(index)}
+              onDoubleClick={() => handleToggleSelectedIndex(index)}
               onKeyDown={(e) => handleCellKeyDown(index, e)}
               className={`h-full min-h-[2.75rem] w-full border-0 bg-transparent pt-3 text-center text-lg font-semibold uppercase tracking-wide text-neutral-900 outline-none ring-inset focus:ring-2 dark:text-neutral-100 ${
                 selectedIndexesSet.has(index)
