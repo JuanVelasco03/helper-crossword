@@ -50,6 +50,8 @@ export function IndexedGrid({
   const [isLettersMapModalOpen, setIsLettersMapModalOpen] = useState(false);
   const [isSelectedIndexesModalOpen, setIsSelectedIndexesModalOpen] =
     useState(false);
+  const [isSelectedLettersMapModalOpen, setIsSelectedLettersMapModalOpen] =
+    useState(false);
   const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -154,6 +156,20 @@ export function IndexedGrid({
   const selectedIndexesSet = useMemo(() => {
     return new Set(selectedIndexes);
   }, [selectedIndexes]);
+
+  /** Índice seleccionado → letra en esa celda (vacío si no hay letra). */
+  const lettersBySelectedIndex = useMemo(() => {
+    const out: Record<number, string> = {};
+    for (const idx of selectedIndexes) {
+      out[idx] = letters[idx] ?? "";
+    }
+    return out;
+  }, [letters, selectedIndexes]);
+
+  const selectedLettersMapDisplay = useMemo(
+    () => formatIndexLetterMap(lettersBySelectedIndex, selectedIndexes),
+    [lettersBySelectedIndex, selectedIndexes]
+  );
 
   const handleLetterChange = (index: number, raw: string) => {
     if (raw === "") {
@@ -317,6 +333,13 @@ export function IndexedGrid({
         >
           Ver indices seleccionados
         </button>
+        <button
+          type="button"
+          onClick={() => setIsSelectedLettersMapModalOpen(true)}
+          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+        >
+          Ver objeto letras seleccionadas
+        </button>
       </div>
 
       {  isLettersMapModalOpen ? (
@@ -380,6 +403,28 @@ export function IndexedGrid({
             </div>
             <pre className="max-h-[min(70vh,32rem)] overflow-y-auto overflow-x-hidden rounded-md bg-neutral-100 p-3 text-sm text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 whitespace-pre-wrap break-all font-mono">
               {JSON.stringify(selectedIndexes)}
+            </pre>
+          </div>
+        </div>
+      ) : null }
+
+      { isSelectedLettersMapModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-lg border border-neutral-300 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                Letras por indice (solo seleccionadas)
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsSelectedLettersMapModalOpen(false)}
+                className="rounded-md border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              >
+                Cerrar
+              </button>
+            </div>
+            <pre className="max-h-[min(70vh,32rem)] overflow-y-auto overflow-x-hidden rounded-md bg-neutral-100 p-3 text-sm text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 whitespace-pre-wrap break-words">
+              {selectedLettersMapDisplay}
             </pre>
           </div>
         </div>
